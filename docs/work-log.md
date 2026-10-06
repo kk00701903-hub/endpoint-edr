@@ -326,3 +326,19 @@
 - 단방향 수집만 함. Wazuh 를 조작하거나 PC 에 개입하는 코드는 없음.
 - Wazuh 경보도 알림 연동(슬랙·이메일) 조건에 걸리면 함께 발송됨.
 - 운영 전 수집 서버 `.env` 에 `WAZUH_WEBHOOK_SECRET`·`WAZUH_TENANT_ID` 를 넣고, Wazuh 매니저에 integrator 스크립트·`<integration>` 블록을 설정해야 함(`deploy/wazuh/README.md`).
+
+---
+
+## 2026-10-06 — CI 워크플로 복구·실행
+
+### 요청과 해석
+- 저장소에 `.git` 이 없어 첫 푸시 때 `.github/workflows` 가 비어 있었음. "CI 돌려줘" → 문서·`run.sh` 기준으로 `ci.yml` 복구 후 Actions 실행.
+
+### 바꾼 것
+- `.github/workflows/ci.yml`(신규): `agent`(가드레일·단위시험·Windows amd64/arm64 빌드·vet), `server`(gofmt·vet·test·build), `console`(lint·typecheck·build), `integration`(Postgres 16 + PostgREST 12.2.8 + Playwright, `tests/integration/run.sh`, 실패 시 `integration-logs` 아티팩트)
+
+### 검증한 것
+- 로컬 `scripts/build.ps1 -Tidy` 는 이전 턴에서 통과. CI 결과는 GitHub Actions 에서 확인.
+
+### 특이사항
+- 워크플로 파일이 로컬에 없어서 문서(DEV_GUIDE·integration README·work-log)와 `run.sh` 요구사항으로 재작성함.

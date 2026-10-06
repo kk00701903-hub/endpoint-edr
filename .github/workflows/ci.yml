@@ -1,0 +1,181 @@
+# 푸시·PR 마다: 가드레일·빌드·단위 시험·종단 통합 테스트
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  agent:
+    name: agent (passive + windows build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: agent
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.x"
+          cache-dependency-path: agent/go.sum
+
+      - name: 읽기 전용 가드레일
+        working-directory: .
+        run: bash scripts/check-passive.sh
+
+      - name: go.sum 없으면 tidy
+        run: |
+          if [ ! -f go.sum ]; then go mod tidy; fi
+
+      - name: 단위 시험
+        run: go test ./...
+
+      - name: Windows amd64·arm64 빌드 + vet
+        env:
+          CGO_ENABLED: "0"
+          GOOS: windows
+        run: |
+          mkdir -p dist
+          for arch in amd64 arm64; do
+            GOARCH=$arch go build -trimpath -ldflags "-s -w" -o "dist/edr-agent-$arch.exe" ./cmd/edr-agent
+          done
+          GOARCH=amd64 go vet ./...
+
+  server:
+    name: server (gofmt·vet·test·build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.x"
+          cache-dependency-path: services/go.sum
+
+      - name: go.sum 없으면 tidy
+        run: |
+          if [ ! -f go.sum ]; then go mod tidy; fi
+
+      - name: gofmt
+        run: |
+          out=$(gofmt -l .)
+          if [ -n "$out" ]; then
+            echo "gofmt 필요:"
+            echo "$out"
+            exit 1
+          fi
+
+      - name: vet · test · build
+        run: |
+          go vet ./...
+          go test ./...
+          go build ./...
+
+  console:
+    name: console (lint·typecheck·build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+
+      - name: install · lint · typecheck · build
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm lint
+          pnpm typecheck
+          pnpm build
+        env:
+          EDR_DEMO: "1"
+
+  integration:
+    name: integration (end-to-end)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [agent, server, console]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.x"
+          cache-dependency-path: |
+            agent/go.sum
+            services/go.sum
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: |
+            apps/web/pnpm-lock.yaml
+            tests/integration/package-lock.json
+
+      - name: PostgreSQL 클라이언트 · PostgREST
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          curl -fsSL -o /tmp/postgrest.tar.xz \
+            https://github.com/PostgREST/postgrest/releases/download/v12.2.8/postgrest-v12.2.8-linux-static-x86-64.tar.xz
+          tar -xJf /tmp/postgrest.tar.xz -C /tmp
+          sudo install -m 755 /tmp/postgrest /usr/local/bin/postgrest
+          postgrest --help | head -1
+
+      - name: 통합 테스트 의존성
+        working-directory: tests/integration
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: run.sh
+        env:
+          PGHOST: localhost
+          PGPORT: "5432"
+          PGUSER: postgres
+          POSTGREST_BIN: postgrest
+          EDR_IT_TMP: /tmp/edr-it
+        run: bash tests/integration/run.sh
+
+      - name: 실패 시 로그 업로드
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-logs
+          path: /tmp/edr-it/logs/
+          if-no-files-found: ignore
