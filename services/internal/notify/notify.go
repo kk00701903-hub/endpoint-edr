@@ -139,7 +139,8 @@ func postJSON(ctx context.Context, url string, body []byte) error {
 
 // ---------------- 이메일(SMTP) ----------------
 // SMTP 서버 설정은 .env 공통값. 채널 target = 받는 사람(쉼표 구분).
-//   SMTP_HOST, SMTP_PORT, SMTP_FROM, SMTP_USER(선택), SMTP_PASS(선택)
+//
+//	SMTP_HOST, SMTP_PORT, SMTP_FROM, SMTP_USER(선택), SMTP_PASS(선택)
 func sendEmail(c Channel, msg Message) error {
 	host := os.Getenv("SMTP_HOST")
 	port := os.Getenv("SMTP_PORT")
