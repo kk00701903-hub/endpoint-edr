@@ -338,7 +338,10 @@
 - `.github/workflows/ci.yml`(신규): `agent`(가드레일·단위시험·Windows amd64/arm64 빌드·vet), `server`(gofmt·vet·test·build), `console`(lint·typecheck·build), `integration`(Postgres 16 + PostgREST 12.2.8 + Playwright, `tests/integration/run.sh`, 실패 시 `integration-logs` 아티팩트)
 
 ### 검증한 것
-- 로컬 `scripts/build.ps1 -Tidy` 는 이전 턴에서 통과. CI 결과는 GitHub Actions 에서 확인.
+- 로컬 `scripts/build.ps1 -Tidy` 는 이전 턴에서 통과.
+- CI 1차: agent·console 통과, server gofmt 실패 → `notify.go` gofmt 후 재실행.
+- CI 2차: agent·server·console 통과, integration 은 `03-console` "메모 저장" 1건 실패(나머지 단계 통과).
 
 ### 특이사항
 - 워크플로 파일이 로컬에 없어서 문서(DEV_GUIDE·integration README·work-log)와 `run.sh` 요구사항으로 재작성함.
+- 메모 저장 실패 원인: 테스트가 `getByText` 로 확인하는데, 아직 textarea 에 남은 글자와 바로 매칭되어 서버 액션 완료 전에 DB 를 읽음. 입력칸이 비워질 때까지 기다리도록 `03-console.mjs` 수정.

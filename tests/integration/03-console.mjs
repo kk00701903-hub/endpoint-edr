@@ -107,7 +107,12 @@ try {
   expect("조사 시작", sql(`select status from incidents where id = ${inc}`) === "acknowledged");
   await p.getByLabel("처리 메모").fill("공격자 IP 방화벽 차단 요청함");
   await p.getByRole("button", { name: "메모 남기기" }).click();
-  await p.getByText("공격자 IP 방화벽 차단 요청함").waitFor({ timeout: 8000 });
+  // 저장 성공 시 입력칸이 비워짐. getByText 만 쓰면 textarea 내용과 바로 매칭되어 레이스가 난다.
+  await p.waitForFunction(() => {
+    const el = document.querySelector('textarea[aria-label="처리 메모"]');
+    return el instanceof HTMLTextAreaElement && el.value === "";
+  }, null, { timeout: 8000 });
+  await p.locator("ol li", { hasText: "공격자 IP 방화벽 차단 요청함" }).waitFor({ timeout: 5000 });
   expect("메모 저장", sql("select count(*) from incident_comments") === "1");
   await p.getByRole("button", { name: "인시던트 종결" }).click();
   await p.waitForTimeout(1500);
