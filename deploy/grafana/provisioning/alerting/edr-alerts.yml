@@ -1,0 +1,88 @@
+# Grafana 통합 알림 (Grafana 10/11 파일 프로비저닝 형식)
+# DB 탐지 엔진이 alerts 테이블에 넣은 High/Critical 경보를 외부(Slack/Teams/텔레그램 웹훅 등)로 전달한다.
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: edr-webhook
+    receivers:
+      - uid: edr-webhook-1
+        type: webhook
+        settings:
+          url: ${ALERT_WEBHOOK_URL}
+          httpMethod: POST
+
+policies:
+  - orgId: 1
+    receiver: edr-webhook
+    group_by: ["alertname"]
+    group_wait: 10s
+    group_interval: 1m
+    repeat_interval: 4h
+
+groups:
+  - orgId: 1
+    name: edr-security
+    folder: EDR
+    interval: 1m
+    rules:
+      - uid: edr-open-high-alerts
+        title: "신규 High/Critical 보안 경보"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: edr-pg
+            model:
+              refId: A
+              format: table
+              rawQuery: true
+              editorMode: code
+              rawSql: >-
+                select count(*)::float8 as value from alerts
+                where severity in ('high','critical') and status = 'open'
+                  and created_at > now() - interval '5 minutes'
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+        noDataState: OK
+        execErrState: Error
+        for: 0s
+        labels: { severity: high, source: edr }
+        annotations:
+          summary: "최근 5분 신규 High/Critical 경보 {{ $values.A }}건 — 대시보드에서 확인하세요"
+
+      - uid: edr-agents-offline
+        title: "에이전트 무응답 (30분 이상)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: edr-pg
+            model:
+              refId: A
+              format: table
+              rawQuery: true
+              editorMode: code
+              rawSql: >-
+                select count(*)::float8 as value from devices
+                where status = 'active' and last_seen_at < now() - interval '30 minutes'
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+        noDataState: OK
+        execErrState: Error
+        for: 10m
+        labels: { severity: medium, source: edr }
+        annotations:
+          summary: "응답 없는 에이전트 {{ $values.A }}대 (서비스 중지·삭제·네트워크 차단 가능성)"

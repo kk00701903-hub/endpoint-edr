@@ -1,0 +1,339 @@
+{
+  "uid": "edr-overview",
+  "title": "EDR 보안 현황",
+  "tags": [
+    "edr"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "미처리 Critical",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "edr-pg"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "edr-pg"
+          },
+          "rawQuery": true,
+          "editorMode": "code",
+          "format": "table",
+          "rawSql": "select count(*) as value from alerts where status='open' and severity='critical'"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 2,
+      "title": "미처리 High",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "edr-pg"
+      },
+      "gridPos": {
+        "x": 4,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "edr-pg"
+          },
+          "rawQuery": true,
+          "editorMode": "code",
+          "format": "table",
+          "rawSql": "select count(*) as value from alerts where status='open' and severity='high'"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "title": "활성 에이전트",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "edr-pg"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "edr-pg"
+          },
+          "rawQuery": true,
+          "editorMode": "code",
+          "format": "table",
+          "rawSql": "select count(*) filter (where last_seen_at > now() - interval '15 minutes') as online, count(*) filter (where last_seen_at <= now() - interval '15 minutes' or last_seen_at is null) as offline from devices where status='active'"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "악성/의심 해시",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "edr-pg"
+      },
+      "gridPos": {
+        "x": 14,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "edr-pg"
+          },
+          "rawQuery": true,
+          "editorMode": "code",
+          "format": "table",
+          "rawSql": "select count(*) filter (where verdict='malicious') as malicious, count(*) filter (where verdict='suspicious') as suspicious from file_hashes"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "로그온 실패(4625) 추이",
+      "type": "timeseries",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "edr-pg"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 14,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "edr-pg"
+          },
+          "rawQuery": true,
+          "editorMode": "code",
+          "format": "time_series",
+          "rawSql": "select $__timeGroupAlias(event_time, '5m'), count(*) as \"실패\" from security_events where event_id = 4625 and $__timeFilter(event_time) group by 1 order by 1"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "실패 로그온 출발지 TOP 10",
+      "type": "table",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "edr-pg"
+      },
+      "gridPos": {
+        "x": 14,
+        "y": 4,
+        "w": 10,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "edr-pg"
+          },
+          "rawQuery": true,
+          "editorMode": "code",
+          "format": "table",
+          "rawSql": "select host(src_ip) as \"출발지\", count(*) as \"실패\", count(distinct device_id) as \"대상 PC\", max(event_time) as \"마지막\" from security_events where event_id = 4625 and $__timeFilter(event_time) group by src_ip order by 2 desc limit 10"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "최근 경보",
+      "type": "table",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "edr-pg"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 24,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "edr-pg"
+          },
+          "rawQuery": true,
+          "editorMode": "code",
+          "format": "table",
+          "rawSql": "select a.created_at as \"시각\", a.severity as \"심각도\", a.rule_id as \"규칙\", a.title as \"내용\", d.hostname as \"PC\", a.status as \"상태\" from alerts a left join devices d on d.id = a.device_id where $__timeFilter(a.created_at) order by a.created_at desc limit 100"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "외부 통신 TOP (프로세스·원격지)",
+      "type": "table",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "edr-pg"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 21,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "edr-pg"
+          },
+          "rawQuery": true,
+          "editorMode": "code",
+          "format": "table",
+          "rawSql": "select process_name as \"프로세스\", host(remote_ip) as \"원격 IP\", remote_port as \"포트\", count(distinct device_id) as \"PC 수\", max(observed_at) as \"마지막\" from net_connections where is_external and direction = 'outbound' and $__timeFilter(observed_at) group by 1,2,3 order by 4 desc, 5 desc limit 50"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "신규 자동 실행 항목",
+      "type": "table",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "edr-pg"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 21,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "edr-pg"
+          },
+          "rawQuery": true,
+          "editorMode": "code",
+          "format": "table",
+          "rawSql": "select c.observed_at as \"시각\", d.hostname as \"PC\", c.change as \"변경\", c.location as \"위치\", c.entry_name as \"이름\", c.command as \"명령\" from autorun_changes c join devices d on d.id = c.device_id where c.change in ('added','modified') and $__timeFilter(c.observed_at) order by c.observed_at desc limit 100"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "에이전트 상태",
+      "type": "table",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "edr-pg"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 30,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "edr-pg"
+          },
+          "rawQuery": true,
+          "editorMode": "code",
+          "format": "table",
+          "rawSql": "select hostname as \"PC\", agent_version as \"버전\", os_version as \"OS\", host(last_ip) as \"IP\", last_seen_at as \"마지막 수신\", case when last_seen_at > now() - interval '15 minutes' then 'online' else 'offline' end as \"상태\" from devices where status = 'active' order by last_seen_at desc nulls last"
+        }
+      ]
+    }
+  ],
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
+  }
+}

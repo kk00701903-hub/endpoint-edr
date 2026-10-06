@@ -1,0 +1,19 @@
+{
+  "ingest_url": "https://ingest.example.com",
+  "enrollment_key": "edr_enr_XXXXXXXXXXXXXXXXXXXXXXXX",
+  "process_interval": "60s",
+  "network_interval": "15s",
+  "eventlog_interval": "10s",
+  "autorun_interval": "10m",
+  "full_snapshot_every": "1h",
+  "hash_max_file_mb": 200,
+  "hash_mb_per_sec": 20,
+  "memory_limit_mb": 150,
+  "spool_max_mb": 50,
+  "eventlog_backfill": "24h",
+  "inventory_interval": "6h",
+  "posture_interval": "1h",
+  "policy_interval": "15m",
+  "docscan_mb_per_sec": 8,
+  "av_services": []
+}

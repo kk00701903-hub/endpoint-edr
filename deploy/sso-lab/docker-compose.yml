@@ -1,0 +1,68 @@
+# =====================================================================
+# 개인 PC SSO 실험실 — 테스트용 AD + Keycloak
+#   켜고 끄기: node deploy/sso-lab/lab.mjs on | off | status | reset  (컨테이너 + Supabase 설정 + 콘솔 버튼을 함께)
+#   컨테이너만: docker compose -f deploy/sso-lab/docker-compose.yml up -d --build
+#   Keycloak 관리 화면: http://localhost:8080/admin  (lab-admin / .env 의 LAB_KC_ADMIN_PASSWORD)
+#   콘솔 로그인 흐름에서 쓰는 주소: http://host.docker.internal:8080/realms/bing
+# 실험 전용 설정(평문 HTTP·LDAP 389·고정 비밀번호)이 들어 있다. 회사 환경에 그대로 쓰지 말 것 → docs/SSO_LAB.md §6
+# =====================================================================
+name: edr-sso-lab
+
+services:
+  ad:
+    build: ./samba
+    container_name: edr-lab-ad
+    hostname: dc1
+    domainname: bing.test
+    # Samba AD DC 는 sysvol 권한(xattr) 설정에 특권이 필요하다(실험용 컨테이너에서만)
+    privileged: true
+    environment:
+      AD_REALM: BING.TEST
+      AD_DOMAIN: BING
+      AD_ADMIN_PASSWORD: ${LAB_AD_ADMIN_PASSWORD:-Adm1n!Lab2026}
+      AD_SVC_PASSWORD: ${LAB_LDAP_BIND_PASSWORD:-Svc!Keycloak2026}
+      AD_USER_PASSWORD: ${LAB_USER_PASSWORD:-Passw0rd!Lab}
+    volumes:
+      - ad-data:/var/lib/samba
+    ports:
+      - "127.0.0.1:1389:389"     # PC 에서 ldapsearch 등으로 들여다볼 때만 (다른 PC 에는 열지 않음)
+    healthcheck:
+      test: ["CMD-SHELL", "ldapsearch -x -H ldap://127.0.0.1 -D \"CN=svc-keycloak,CN=Users,DC=bing,DC=test\" -w \"$$AD_SVC_PASSWORD\" -b DC=bing,DC=test -s base >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:${LAB_KEYCLOAK_VERSION:-26.8.0}
+    container_name: edr-lab-keycloak
+    command:
+      - start-dev
+      - --import-realm
+      - --hostname=http://host.docker.internal:8080   # 브라우저와 Supabase(도커 안)가 같은 주소로 Keycloak 을 본다
+      - --hostname-backchannel-dynamic=true
+      - --http-port=8080
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: lab-admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${LAB_KC_ADMIN_PASSWORD:-Lab!Admin2026}
+      # 아래 값은 bing-realm.json 의 ${...} 자리에 들어간다
+      LAB_LDAP_URL: ldap://ad:389
+      LAB_LDAP_BIND_DN: CN=svc-keycloak,CN=Users,DC=bing,DC=test
+      LAB_LDAP_BIND_PASSWORD: ${LAB_LDAP_BIND_PASSWORD:-Svc!Keycloak2026}
+      LAB_LDAP_USERS_DN: DC=bing,DC=test
+      LAB_LDAP_GROUPS_DN: OU=EDR,DC=bing,DC=test
+      LAB_CONSOLE_CLIENT_SECRET: ${LAB_CONSOLE_CLIENT_SECRET:-edr-console-lab-secret}
+      LAB_SUPABASE_CALLBACK: http://localhost:54321/auth/v1/callback
+      LAB_SSL_REQUIRED: none
+    volumes:
+      - ./keycloak/bing-realm.json:/opt/keycloak/data/import/bing-realm.json:ro
+      - kc-data:/opt/keycloak/data/h2
+    ports:
+      - "8080:8080"
+    depends_on:
+      ad:
+        condition: service_healthy
+
+volumes:
+  ad-data:
+  kc-data:

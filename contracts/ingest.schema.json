@@ -1,0 +1,632 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/endpoint-edr/ingest.schema.json",
+  "title": "Endpoint EDR ingest envelope",
+  "description": "에이전트 → POST /v1/ingest 본문(gzip JSON). 변경 시 agent/internal/model, services/internal/contract, supabase 마이그레이션을 함께 수정.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "agent_version",
+    "hostname",
+    "sent_at",
+    "snapshot"
+  ],
+  "properties": {
+    "agent_version": {
+      "type": "string"
+    },
+    "hostname": {
+      "type": "string"
+    },
+    "sent_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "snapshot": {
+      "type": "boolean"
+    },
+    "processes": {
+      "type": "array",
+      "maxItems": 20000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "pid",
+          "ppid",
+          "name",
+          "create_time",
+          "observed_at"
+        ],
+        "properties": {
+          "pid": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "ppid": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "name": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "command_line": {
+            "type": "string"
+          },
+          "user": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "create_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "connections": {
+      "type": "array",
+      "maxItems": 20000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "proto",
+          "direction",
+          "local_ip",
+          "local_port",
+          "state",
+          "pid",
+          "is_external",
+          "observed_at"
+        ],
+        "properties": {
+          "proto": {
+            "enum": [
+              "tcp4",
+              "tcp6",
+              "udp4",
+              "udp6"
+            ]
+          },
+          "direction": {
+            "enum": [
+              "listen",
+              "inbound",
+              "outbound",
+              "bound"
+            ]
+          },
+          "local_ip": {
+            "type": "string"
+          },
+          "local_port": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 65535
+          },
+          "remote_ip": {
+            "type": "string"
+          },
+          "remote_port": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 65535
+          },
+          "state": {
+            "type": "string"
+          },
+          "pid": {
+            "type": "integer"
+          },
+          "process_name": {
+            "type": "string"
+          },
+          "is_external": {
+            "type": "boolean"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "security_events": {
+      "type": "array",
+      "maxItems": 20000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "channel",
+          "event_id",
+          "record_id",
+          "event_time",
+          "provider"
+        ],
+        "properties": {
+          "channel": {
+            "type": "string"
+          },
+          "event_id": {
+            "type": "integer"
+          },
+          "record_id": {
+            "type": "integer"
+          },
+          "event_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "target_user": {
+            "type": "string"
+          },
+          "target_domain": {
+            "type": "string"
+          },
+          "logon_type": {
+            "type": "integer"
+          },
+          "src_ip": {
+            "type": "string"
+          },
+          "src_port": {
+            "type": "string"
+          },
+          "workstation": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "sub_status": {
+            "type": "string"
+          },
+          "process_name": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "autoruns": {
+      "type": "array",
+      "maxItems": 20000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "change",
+          "location",
+          "entry_name",
+          "observed_at"
+        ],
+        "properties": {
+          "change": {
+            "enum": [
+              "baseline",
+              "added",
+              "modified",
+              "removed"
+            ]
+          },
+          "location": {
+            "type": "string"
+          },
+          "entry_name": {
+            "type": "string"
+          },
+          "command": {
+            "type": "string"
+          },
+          "image_path": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "process_exits": {
+      "type": "array",
+      "maxItems": 20000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "pid",
+          "observed_at"
+        ],
+        "properties": {
+          "pid": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "create_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "health": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "uptime_sec",
+        "cpu_percent",
+        "working_set_mb",
+        "goroutines",
+        "spool_files",
+        "spool_bytes",
+        "scan_ms"
+      ],
+      "properties": {
+        "uptime_sec": {
+          "type": "integer"
+        },
+        "cpu_percent": {
+          "type": "number"
+        },
+        "working_set_mb": {
+          "type": "number"
+        },
+        "goroutines": {
+          "type": "integer"
+        },
+        "spool_files": {
+          "type": "integer"
+        },
+        "spool_bytes": {
+          "type": "integer"
+        },
+        "scan_ms": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer"
+          }
+        },
+        "last_errors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 5
+        }
+      }
+    },
+    "inventory": {
+      "description": "자산 정보 전체(바뀌었을 때 또는 24시간마다). 서버는 설치 프로그램 목록을 통째로 교체하고 설치·삭제·업데이트 이력을 만든다.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "collected_at",
+        "os"
+      ],
+      "properties": {
+        "collected_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "os": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "edition": {
+              "type": "string",
+              "description": "레지스트리 EditionID (Professional, Enterprise, EnterpriseS ...)"
+            },
+            "display_version": {
+              "type": "string"
+            },
+            "build": {
+              "type": "integer"
+            },
+            "ubr": {
+              "type": "integer"
+            },
+            "install_type": {
+              "type": "string",
+              "description": "Client | Server"
+            },
+            "installed_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "arch": {
+              "type": "string"
+            }
+          }
+        },
+        "hardware": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "manufacturer": {
+              "type": "string"
+            },
+            "model": {
+              "type": "string"
+            },
+            "serial": {
+              "type": "string"
+            },
+            "bios_version": {
+              "type": "string"
+            },
+            "cpu": {
+              "type": "string"
+            },
+            "cores": {
+              "type": "integer"
+            },
+            "memory_mb": {
+              "type": "integer"
+            },
+            "disk_total_gb": {
+              "type": "number"
+            },
+            "disk_free_gb": {
+              "type": "number"
+            }
+          }
+        },
+        "domain": {
+          "type": "string"
+        },
+        "domain_joined": {
+          "type": "boolean"
+        },
+        "last_user": {
+          "type": "string"
+        },
+        "adapters": {
+          "type": "array",
+          "maxItems": 16,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "mac": {
+                "type": "string"
+              },
+              "ips": {
+                "type": "array",
+                "maxItems": 16,
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "software": {
+          "type": "array",
+          "maxItems": 5000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string"
+              },
+              "publisher": {
+                "type": "string"
+              },
+              "install_date": {
+                "type": "string",
+                "pattern": "^\\d{8}$"
+              },
+              "scope": {
+                "type": "string",
+                "enum": [
+                  "machine",
+                  "user"
+                ]
+              },
+              "arch": {
+                "type": "string",
+                "enum": [
+                  "x64",
+                  "x86",
+                  ""
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "posture": {
+      "description": "보안 상태 점검 결과 전체(바뀌었을 때 또는 6시간마다). id 는 supabase posture_checks.check_id",
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]{2,40}$"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pass",
+              "warn",
+              "fail",
+              "unknown"
+            ]
+          },
+          "detail": {
+            "type": "string",
+            "maxLength": 500
+          }
+        }
+      }
+    },
+    "doc_scan": {
+      "description": "문서 감사 결과 배치(정책이 켜져 있을 때만). 문서 내용·개인정보 값은 담지 않는다 — 위치와 건수만. 마지막 배치에 final=true.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scan_id",
+        "trigger",
+        "started_at",
+        "final",
+        "files_scanned",
+        "files_skipped",
+        "errors"
+      ],
+      "properties": {
+        "scan_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8,32}$"
+        },
+        "trigger": {
+          "type": "string",
+          "enum": [
+            "schedule",
+            "request",
+            "manual"
+          ]
+        },
+        "request_id": {
+          "type": "integer"
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "finished_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "final": {
+          "type": "boolean"
+        },
+        "files_scanned": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "files_skipped": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "errors": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "findings": {
+          "type": "array",
+          "maxItems": 500,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "size",
+              "modified_at"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4096,
+                "description": "DB 에는 앞 1024자만 저장"
+              },
+              "size": {
+                "type": "integer"
+              },
+              "modified_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "pii": {
+                "type": "object",
+                "maxProperties": 50,
+                "additionalProperties": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "propertyNames": {
+                  "enum": [
+                    "rrn",
+                    "frn",
+                    "passport",
+                    "driver",
+                    "card",
+                    "phone"
+                  ]
+                }
+              },
+              "keywords": {
+                "type": "object",
+                "maxProperties": 50,
+                "additionalProperties": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "stale": {
+                "type": "boolean"
+              },
+              "unreadable": {
+                "type": "string",
+                "maxLength": 200
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

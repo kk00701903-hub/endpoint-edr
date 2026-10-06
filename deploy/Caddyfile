@@ -1,0 +1,25 @@
+# 사내망 전용(공인 도메인 없음)이면 각 사이트 블록에 아래 중 하나를 추가한다.
+#   tls /certs/ingest.crt /certs/ingest.key   # 사내 CA 로 발급한 인증서 (권장)
+#   tls internal                              # Caddy 자체 CA — 이 경우 Caddy 루트 인증서를 GPO 로 PC 에 배포해야 에이전트가 신뢰한다
+
+{$INGEST_DOMAIN} {
+	encode zstd gzip
+	# 에이전트 전용 경로만 노출
+	@agent path /v1/enroll /v1/ingest /healthz
+	handle @agent {
+		request_body {
+			max_size 6MB
+		}
+		reverse_proxy ingest:8080
+	}
+	respond 404
+}
+
+{$GRAFANA_DOMAIN} {
+	reverse_proxy grafana:3000
+}
+
+{$CONSOLE_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy console:3000
+}

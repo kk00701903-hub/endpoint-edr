@@ -1,0 +1,12 @@
+{
+  "name": "edr-integration-tests",
+  "private": true,
+  "type": "module",
+  "description": "종단 통합 테스트 (run.sh 가 실행). 운영 코드에 포함되지 않음.",
+  "scripts": {
+    "test": "bash run.sh"
+  },
+  "dependencies": {
+    "playwright": "1.56.1"
+  }
+}

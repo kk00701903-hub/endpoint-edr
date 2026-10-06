@@ -1,0 +1,82 @@
+# Endpoint EDR 서버 측 스택
+#   - DB 는 Supabase(클라우드 또는 셀프호스팅)를 쓴다. 이 compose 에는 DB 가 없다.
+#   - 보안 로그를 회사 밖에 둘 수 없으면 사내 서버에 Supabase 공식 docker 구성과 함께 띄운다(docs/ARCHITECTURE.md §7-2).
+#
+# 사용: cp .env.example .env && docker compose up -d --build
+name: endpoint-edr
+
+services:
+  ingest:
+    build: { context: ../services, args: { APP: ingest } }
+    environment:
+      DATABASE_URL: ${INGEST_DATABASE_URL}
+      LISTEN_ADDR: ":8080"
+      TRUST_PROXY: "1"
+    expose: ["8080"]
+    restart: unless-stopped
+    deploy: { resources: { limits: { memory: 256m } } }
+
+  enricher:
+    build: { context: ../services, args: { APP: enricher } }
+    environment:
+      DATABASE_URL: ${ENRICHER_DATABASE_URL}
+      VT_API_KEY: ${VT_API_KEY:-}
+      VT_REQUESTS_PER_MIN: ${VT_REQUESTS_PER_MIN:-4}
+      MALWAREBAZAAR_AUTH_KEY: ${MALWAREBAZAAR_AUTH_KEY:-}
+      RUN_DETECTIONS: ${RUN_DETECTIONS:-0}   # pg_cron 을 못 쓰면 1 (탐지 + 파티션 유지보수를 enricher 가 대신 실행)
+    restart: unless-stopped
+    deploy: { resources: { limits: { memory: 128m } } }
+
+  # 관리 콘솔(Next.js). 브라우저는 Supabase 에 사용자 세션(anon 키 + 로그인)으로만 접근한다.
+  console:
+    build:
+      context: ../apps/web
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+    environment:
+      NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      EDR_INGEST_URL: https://${INGEST_DOMAIN}
+      EDR_DEMO: "0"
+    expose: ["3000"]
+    restart: unless-stopped
+    deploy: { resources: { limits: { memory: 512m } } }
+
+  # TLS 종단 + 에이전트 진입점. 공인 도메인이면 Let's Encrypt 자동 발급, 사내망 전용이면 Caddyfile 에서 사내 인증서로 바꾼다.
+  caddy:
+    image: caddy:2-alpine
+    ports: ["443:443", "80:80"]
+    environment:
+      INGEST_DOMAIN: ${INGEST_DOMAIN}
+      GRAFANA_DOMAIN: ${GRAFANA_DOMAIN}
+      CONSOLE_DOMAIN: ${CONSOLE_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    depends_on: [ingest, grafana, console]
+    restart: unless-stopped
+
+  # 내부 SOC/운영 대시보드 (Grafana OSS = AGPLv3, 수정 없이 별도 컨테이너로 사용)
+  grafana:
+    image: grafana/grafana-oss:latest   # 운영에서는 버전을 고정할 것 (예: 11.x)
+    environment:
+      GF_SERVER_ROOT_URL: https://${GRAFANA_DOMAIN}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      PG_HOST: ${PG_HOST}
+      PG_DB: ${PG_DB:-postgres}
+      PG_GRAFANA_USER: ${PG_GRAFANA_USER}
+      PG_GRAFANA_PASSWORD: ${PG_GRAFANA_PASSWORD}
+      ALERT_WEBHOOK_URL: ${ALERT_WEBHOOK_URL:-http://localhost/disabled}
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    expose: ["3000"]
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  grafana_data:

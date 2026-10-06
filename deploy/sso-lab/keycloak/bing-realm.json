@@ -1,0 +1,434 @@
+{
+  "realm": "bing",
+  "displayName": "BING 사내 계정 (실험)",
+  "enabled": true,
+  "sslRequired": "${LAB_SSL_REQUIRED:none}",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "rememberMe": false,
+  "loginWithEmailAllowed": false,
+  "duplicateEmailsAllowed": false,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "failureFactor": 5,
+  "permanentLockout": false,
+  "maxFailureWaitSeconds": 900,
+  "waitIncrementSeconds": 60,
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 7200,
+  "ssoSessionMaxLifespan": 43200,
+  "internationalizationEnabled": true,
+  "supportedLocales": [
+    "ko",
+    "en"
+  ],
+  "defaultLocale": "ko",
+  "eventsEnabled": true,
+  "eventsExpiration": 7776000,
+  "adminEventsEnabled": true,
+  "adminEventsDetailsEnabled": false,
+  "otpPolicyType": "totp",
+  "otpPolicyAlgorithm": "HmacSHA1",
+  "otpPolicyDigits": 6,
+  "otpPolicyPeriod": 30,
+  "otpPolicyLookAheadWindow": 1,
+  "roles": {
+    "realm": [
+      {
+        "name": "EDR-Admins",
+        "description": "AD 그룹 EDR-Admins — 콘솔 관리자 (로그인 시 OTP 필수)"
+      },
+      {
+        "name": "EDR-Analysts",
+        "description": "AD 그룹 EDR-Analysts — 콘솔 분석가"
+      },
+      {
+        "name": "EDR-Viewers",
+        "description": "AD 그룹 EDR-Viewers — 콘솔 열람자"
+      }
+    ]
+  },
+  "components": {
+    "org.keycloak.storage.UserStorageProvider": [
+      {
+        "name": "bing-ad",
+        "providerId": "ldap",
+        "config": {
+          "enabled": [
+            "true"
+          ],
+          "priority": [
+            "0"
+          ],
+          "vendor": [
+            "ad"
+          ],
+          "connectionUrl": [
+            "${LAB_LDAP_URL:ldap://ad:389}"
+          ],
+          "startTls": [
+            "false"
+          ],
+          "useTruststoreSpi": [
+            "always"
+          ],
+          "connectionPooling": [
+            "true"
+          ],
+          "connectionTimeout": [
+            "5000"
+          ],
+          "readTimeout": [
+            "10000"
+          ],
+          "authType": [
+            "simple"
+          ],
+          "bindDn": [
+            "${LAB_LDAP_BIND_DN:CN=svc-keycloak,CN=Users,DC=bing,DC=test}"
+          ],
+          "bindCredential": [
+            "${LAB_LDAP_BIND_PASSWORD:Svc!Keycloak2026}"
+          ],
+          "usersDn": [
+            "${LAB_LDAP_USERS_DN:DC=bing,DC=test}"
+          ],
+          "searchScope": [
+            "2"
+          ],
+          "usernameLDAPAttribute": [
+            "sAMAccountName"
+          ],
+          "rdnLDAPAttribute": [
+            "cn"
+          ],
+          "uuidLDAPAttribute": [
+            "objectGUID"
+          ],
+          "userObjectClasses": [
+            "person, organizationalPerson, user"
+          ],
+          "customUserSearchFilter": [
+            "(!(objectClass=computer))"
+          ],
+          "pagination": [
+            "true"
+          ],
+          "editMode": [
+            "READ_ONLY"
+          ],
+          "importEnabled": [
+            "true"
+          ],
+          "syncRegistrations": [
+            "false"
+          ],
+          "trustEmail": [
+            "true"
+          ],
+          "validatePasswordPolicy": [
+            "false"
+          ],
+          "usePasswordModifyExtendedOp": [
+            "false"
+          ],
+          "allowKerberosAuthentication": [
+            "false"
+          ],
+          "useKerberosForPasswordAuthentication": [
+            "false"
+          ],
+          "cachePolicy": [
+            "NO_CACHE"
+          ],
+          "batchSizeForSync": [
+            "1000"
+          ],
+          "fullSyncPeriod": [
+            "-1"
+          ],
+          "changedSyncPeriod": [
+            "-1"
+          ]
+        },
+        "subComponents": {
+          "org.keycloak.storage.ldap.mappers.LDAPStorageMapper": [
+            {
+              "name": "username",
+              "providerId": "user-attribute-ldap-mapper",
+              "config": {
+                "user.model.attribute": [
+                  "username"
+                ],
+                "ldap.attribute": [
+                  "sAMAccountName"
+                ],
+                "read.only": [
+                  "true"
+                ],
+                "always.read.value.from.ldap": [
+                  "false"
+                ],
+                "is.mandatory.in.ldap": [
+                  "true"
+                ]
+              }
+            },
+            {
+              "name": "first name",
+              "providerId": "user-attribute-ldap-mapper",
+              "config": {
+                "user.model.attribute": [
+                  "firstName"
+                ],
+                "ldap.attribute": [
+                  "givenName"
+                ],
+                "read.only": [
+                  "true"
+                ],
+                "always.read.value.from.ldap": [
+                  "true"
+                ],
+                "is.mandatory.in.ldap": [
+                  "false"
+                ]
+              }
+            },
+            {
+              "name": "last name",
+              "providerId": "user-attribute-ldap-mapper",
+              "config": {
+                "user.model.attribute": [
+                  "lastName"
+                ],
+                "ldap.attribute": [
+                  "sn"
+                ],
+                "read.only": [
+                  "true"
+                ],
+                "always.read.value.from.ldap": [
+                  "true"
+                ],
+                "is.mandatory.in.ldap": [
+                  "false"
+                ]
+              }
+            },
+            {
+              "name": "email",
+              "providerId": "user-attribute-ldap-mapper",
+              "config": {
+                "user.model.attribute": [
+                  "email"
+                ],
+                "ldap.attribute": [
+                  "mail"
+                ],
+                "read.only": [
+                  "true"
+                ],
+                "always.read.value.from.ldap": [
+                  "true"
+                ],
+                "is.mandatory.in.ldap": [
+                  "false"
+                ]
+              }
+            },
+            {
+              "name": "MSAD account controls",
+              "providerId": "msad-user-account-control-mapper",
+              "config": {
+                "always.read.enabled.value.from.ldap": [
+                  "true"
+                ]
+              }
+            },
+            {
+              "name": "EDR 권한 그룹 → 역할",
+              "providerId": "role-ldap-mapper",
+              "config": {
+                "roles.dn": [
+                  "${LAB_LDAP_GROUPS_DN:OU=EDR,DC=bing,DC=test}"
+                ],
+                "role.name.ldap.attribute": [
+                  "cn"
+                ],
+                "role.object.classes": [
+                  "group"
+                ],
+                "membership.ldap.attribute": [
+                  "member"
+                ],
+                "membership.attribute.type": [
+                  "DN"
+                ],
+                "membership.user.ldap.attribute": [
+                  "sAMAccountName"
+                ],
+                "memberof.ldap.attribute": [
+                  "memberOf"
+                ],
+                "mode": [
+                  "READ_ONLY"
+                ],
+                "user.roles.retrieve.strategy": [
+                  "LOAD_ROLES_BY_MEMBER_ATTRIBUTE"
+                ],
+                "use.realm.roles.mapping": [
+                  "true"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "edr-console",
+      "name": "엔드포인트 관제 콘솔",
+      "description": "Supabase Auth(Keycloak 공급자)가 이 클라이언트로 로그인한다",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${LAB_CONSOLE_CLIENT_SECRET:edr-console-lab-secret}",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "frontchannelLogout": true,
+      "redirectUris": [
+        "${LAB_SUPABASE_CALLBACK:http://localhost:54321/auth/v1/callback}",
+        "http://127.0.0.1:54321/auth/v1/callback"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "",
+        "post.logout.redirect.uris": "http://localhost:3000/*##http://127.0.0.1:3000/*"
+      },
+      "defaultClientScopes": [
+        "profile",
+        "email",
+        "roles",
+        "web-origins",
+        "basic"
+      ],
+      "optionalClientScopes": [
+        "offline_access"
+      ],
+      "protocolMappers": [
+        {
+          "name": "AD 권한 그룹(groups)",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "groups",
+            "multivalued": "true",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "browserFlow": "edr-browser",
+  "authenticationFlows": [
+    {
+      "alias": "edr-browser",
+      "description": "회사 계정 로그인: (회사) Kerberos 자동 로그인 → 아이디·비밀번호 → 관리자는 OTP",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-cookie",
+          "authenticatorFlow": false,
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "auth-spnego",
+          "authenticatorFlow": false,
+          "requirement": "DISABLED",
+          "priority": 20,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticatorFlow": true,
+          "flowAlias": "edr-browser forms",
+          "requirement": "ALTERNATIVE",
+          "priority": 30,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "edr-browser forms",
+      "description": "아이디·비밀번호 + 관리자 OTP",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-username-password-form",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticatorFlow": true,
+          "flowAlias": "edr-browser admin otp",
+          "requirement": "CONDITIONAL",
+          "priority": 20,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "edr-browser admin otp",
+      "description": "EDR-Admins 역할이면 OTP 필수(처음이면 인증 앱 등록 화면)",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "conditional-user-role",
+          "authenticatorConfig": "edr-admins-only",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "auth-otp-form",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false
+        }
+      ]
+    }
+  ],
+  "authenticatorConfig": [
+    {
+      "alias": "edr-admins-only",
+      "config": {
+        "condUserRole": "EDR-Admins",
+        "negate": "false"
+      }
+    }
+  ]
+}

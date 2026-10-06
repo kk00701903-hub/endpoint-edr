@@ -1,0 +1,16 @@
+apiVersion: 1
+datasources:
+  - name: EDR Postgres
+    type: grafana-postgresql-datasource   # Grafana 10.x 이하는 type: postgres
+    uid: edr-pg
+    url: ${PG_HOST}:5432
+    user: ${PG_GRAFANA_USER}
+    isDefault: true
+    jsonData:
+      database: ${PG_DB}
+      sslmode: require
+      postgresVersion: 1500
+      timescaledb: false
+      maxOpenConns: 5
+    secureJsonData:
+      password: ${PG_GRAFANA_PASSWORD}

@@ -1,0 +1,168 @@
+@import "tailwindcss";
+@import "@fontsource/ibm-plex-sans-kr/400.css";
+@import "@fontsource/ibm-plex-sans-kr/500.css";
+@import "@fontsource/ibm-plex-sans-kr/600.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+
+@custom-variant dark (&:where(:root:not(.light), :root:not(.light) *));
+
+/* ---------------------------------------------------------------------------
+   디자인 토큰 v2 — "관측소 계기판" : 다크 우선(관제실·야간 근무), 밝은 화면은 전환 가능.
+   - 바탕은 검정이 아닌 깊은 남색 계열, 구획은 가는 선으로만 나눈다.
+   - 조작(링크·버튼)은 신호 파랑 하나.
+   - 심각도는 한 가지 붉은 계열의 명도 단계(낮음→긴급) + 항상 글자 라벨.
+   - ATT&CK 적중 빈도는 파랑 단일 색상 명도 단계(heat-1~4).
+   색 단계는 dataviz 검증 스크립트로 두 테마 모두 통과 확인.
+   --------------------------------------------------------------------------- */
+:root {
+  --canvas: #0c1220;
+  --surface: #121a2a;
+  --surface-2: #172134;
+  --surface-3: #1e2a40;
+  --ink: #e7edf6;
+  --ink-2: #a9b6c9;
+  --muted: #7b8aa0;
+  --line: #212d42;
+  --line-strong: #2e3c56;
+  --nav: #090e19;
+  --nav-2: #131d30;
+  --nav-ink: #95a3b8;
+  --nav-ink-strong: #ffffff;
+  --accent: #5b8def;
+  --accent-hover: #7aa3f3;
+  --accent-ink: #0a1424;
+  --accent-soft: #182a49;
+  --focus: #8ab1ef;
+  --sev-low: #9a3b3d;
+  --sev-medium: #cf544f;
+  --sev-high: #f08a80;
+  --sev-critical: #ffc7c0;
+  --sev-critical-wash: #2a1820;
+  --heat-1: #2f5290;
+  --heat-2: #3f6cb8;
+  --heat-3: #5f8fdc;
+  --heat-4: #9dbdf4;
+  --ok: #3fbf8f;
+  --warn: #e2a33d;
+  --off: #6c7a8f;
+  --chart-grid: #1d283b;
+  color-scheme: dark;
+}
+
+.light {
+  --canvas: #edf0f4;
+  --surface: #ffffff;
+  --surface-2: #f5f7fa;
+  --surface-3: #e8ecf1;
+  --ink: #16202e;
+  --ink-2: #485467;
+  --muted: #6f7b8e;
+  --line: #dce1e8;
+  --line-strong: #c3cad4;
+  --nav: #142033;
+  --nav-2: #1c2b42;
+  --nav-ink: #b9c5d6;
+  --accent: #1f5fbf;
+  --accent-hover: #1a52a6;
+  --accent-ink: #ffffff;
+  --accent-soft: #e3ecfa;
+  --focus: #1f5fbf;
+  --sev-low: #e9a39b;
+  --sev-medium: #db6158;
+  --sev-high: #b32d35;
+  --sev-critical: #7a1222;
+  --sev-critical-wash: #fbeeee;
+  --heat-1: #94b4e8;
+  --heat-2: #6a93da;
+  --heat-3: #3d6cc0;
+  --heat-4: #1f4b93;
+  --ok: #23805f;
+  --warn: #a86a00;
+  --off: #8a94a3;
+  --chart-grid: #e6eaef;
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-nav: var(--nav);
+  --color-nav-2: var(--nav-2);
+  --color-nav-ink: var(--nav-ink);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-sev-low: var(--sev-low);
+  --color-sev-medium: var(--sev-medium);
+  --color-sev-high: var(--sev-high);
+  --color-sev-critical: var(--sev-critical);
+  --color-sev-critical-wash: var(--sev-critical-wash);
+  --color-heat-1: var(--heat-1);
+  --color-heat-2: var(--heat-2);
+  --color-heat-3: var(--heat-3);
+  --color-heat-4: var(--heat-4);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-off: var(--off);
+  --font-sans: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", "D2Coding", Consolas, monospace;
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+}
+
+html {
+  font-size: 14px;
+}
+
+body {
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "tnum" 1;
+  -webkit-font-smoothing: antialiased;
+  word-break: keep-all;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+/* 긴 해시·명령줄은 줄바꿈 허용 */
+.break-mono {
+  font-family: var(--font-mono);
+  word-break: break-all;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 실시간 연결 표시: 유일한 상시 움직임 */
+@keyframes beacon {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 55%, transparent); }
+  70% { box-shadow: 0 0 0 6px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+.beacon {
+  animation: beacon 2.4s ease-out infinite;
+}

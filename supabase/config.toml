@@ -1,0 +1,40 @@
+# Supabase CLI 로컬 실행 설정 (npx supabase start). 클라우드 프로젝트에는 영향 없음.
+# 여기 없는 항목은 CLI 기본값을 쓴다. 회사 계정(AD) SSO 실험 절차는 docs/SSO_LAB.md.
+project_id = "endpoint-edr"
+
+[api]
+port = 54321
+
+[db]
+port = 54322
+major_version = 17
+
+[db.seed]
+# 로컬 DB 를 만들 때 seed.sql 로 실험용 조직·AD 그룹 대응표를 넣는다
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[studio]
+port = 54323
+
+[auth]
+site_url = "http://localhost:3000"
+# 로그인 후 돌아갈 콘솔 주소(정확히 일치해야 함)
+additional_redirect_urls = ["http://localhost:3000/auth/callback", "http://127.0.0.1:3000/auth/callback"]
+jwt_expiry = 3600
+
+# 회사 계정이 AD 에서 막혀도 이미 열린 콘솔 세션이 계속 이어지지 않도록 세션 수명을 제한
+[auth.sessions]
+timebox = "12h"
+inactivity_timeout = "2h"
+
+# 회사 계정(AD) 로그인: Keycloak(deploy/sso-lab) → AD
+# 기본은 꺼짐. 켜고 끄기는 `node deploy/sso-lab/lab.mjs on|off` — 저장소 루트 .env 의
+# SUPABASE_AUTH_EXTERNAL_KEYCLOAK_ENABLED=true|false 가 아래 enabled 값을 덮어쓴다(Supabase CLI 환경 변수 규칙).
+[auth.external.keycloak]
+enabled = false
+client_id = "edr-console"
+# 비밀값은 저장소 루트의 .env(커밋 금지) 또는 환경 변수로: SUPABASE_AUTH_EXTERNAL_KEYCLOAK_SECRET=edr-console-lab-secret
+secret = "env(SUPABASE_AUTH_EXTERNAL_KEYCLOAK_SECRET)"
+# 브라우저와 Supabase Auth(도커 안)가 모두 닿는 주소여야 한다
+url = "http://host.docker.internal:8080/realms/bing"

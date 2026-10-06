@@ -1,0 +1,15 @@
+# 비밀값
+.env
+deploy/.env
+**/config.json
+!agent/packaging/config.example.json
+# 빌드 산출물
+agent/dist/
+services/bin/
+*.exe
+# Node / Next.js
+node_modules/
+.next/
+# Supabase 로컬
+supabase/.branches/
+supabase/.temp/

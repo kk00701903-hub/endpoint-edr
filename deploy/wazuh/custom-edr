@@ -1,0 +1,11 @@
+#!/bin/sh
+# Wazuh integrator 가 부르는 실행 래퍼. 같은 폴더의 custom-edr.py 를 Wazuh 내장 파이썬으로 실행한다.
+# (내장 파이썬이 없으면 시스템 python3 로 대체)
+SCRIPT_PATH_NAME="$0"
+DIR_NAME="$(cd "$(dirname "${SCRIPT_PATH_NAME}")"; pwd -P)"
+WPYTHON="${DIR_NAME}/../framework/python/bin/python3"
+if [ -x "${WPYTHON}" ]; then
+  exec "${WPYTHON}" "${DIR_NAME}/custom-edr.py" "$@"
+else
+  exec python3 "${DIR_NAME}/custom-edr.py" "$@"
+fi
